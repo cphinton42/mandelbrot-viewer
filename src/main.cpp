@@ -3,6 +3,8 @@
 #include <thread>
 
 #include "glad/glad.h"
+#include "glad/glad.c"
+
 #include <GLFW/glfw3.h>
 
 #define GLM_FORCE_CXX11 
@@ -10,40 +12,12 @@
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
-#include "glad/glad.c"
-
 #include "typedefs.h"
 #include "defer.h"
 
+#include "load_shader.h"
+#include "load_shader.cpp"
 
-static const char *vertex_shader_src =
-    "#version 330 core\n"
-    "layout(location = 0) in vec3 v_pos;"
-    "uniform mat3 view_matrix;"
-    "out vec2 m_pos;"
-    "void main() {"
-    "gl_Position = vec4(v_pos.xy, 0, 1);"
-    "m_pos = (view_matrix*v_pos).xy;"
-    "}";
-
-static const char *fragment_shader_src =
-    "#version 330 core\n"
-    "in vec2 m_pos;"
-    "out vec3 color;"
-    "vec2 c_sqr(in vec2 z) {"
-    " return vec2(dot(z,vec2(z.x,-z.y)),2*z.x*z.y);"
-    "}"
-    "void main() {"
-    " vec2 z = vec2(0,0);"
-    " for(int i = 0; i < 100; ++i) {"
-    "  z = c_sqr(z) + m_pos;"
-    "  if((z.x*z.x + z.y*z.y) > 4) {"
-    "   color = (float(i) / 100.0) * vec3(1,1,1);"
-    "   return;"
-    "  }"
-    " }"
-    " color = vec3(0,0,0);"
-    "}";
 
 static float aspect_ratio = 1.0;
 static float scale = 1.0;
@@ -181,67 +155,9 @@ int main()
     // Compile shaders
     //
     GLuint program_id;
+    if(!load_shader_program("shaders/simple.vert", "shaders/simple.frag", &program_id))
     {
-	GLuint vertex_shader_id = glCreateShader(GL_VERTEX_SHADER);
-	GLuint fragment_shader_id = glCreateShader(GL_FRAGMENT_SHADER);
-
-	defer {
-	    glDeleteShader(vertex_shader_id);
-	    glDeleteShader(fragment_shader_id);
-	};
-	
-	GLint compile_success = GL_FALSE;
-
-	glShaderSource(vertex_shader_id, 1, &vertex_shader_src, nullptr);
-	glCompileShader(vertex_shader_id);
-	
-	glGetShaderiv(vertex_shader_id, GL_COMPILE_STATUS, &compile_success);
-	if(!compile_success)
-	{
-	    int info_log_len;
-	    glGetShaderiv(vertex_shader_id, GL_INFO_LOG_LENGTH, &info_log_len);
-	    char *buffer = (char*)malloc(info_log_len);
-	    glGetShaderInfoLog(vertex_shader_id, info_log_len, nullptr, buffer);
-	    fprintf(stderr, "Error compiling vertex shader:\n%s\n", buffer);
-	    return 1;
-	}
-	
-	glShaderSource(fragment_shader_id, 1, &fragment_shader_src, nullptr);
-	glCompileShader(fragment_shader_id);
-	
-	glGetShaderiv(fragment_shader_id, GL_COMPILE_STATUS, &compile_success);
-	if(!compile_success)
-	{
-	    int info_log_len;
-	    glGetShaderiv(fragment_shader_id, GL_INFO_LOG_LENGTH, &info_log_len);
-	    char *buffer = (char*)malloc(info_log_len);
-	    glGetShaderInfoLog(vertex_shader_id, info_log_len, nullptr, buffer);
-	    fprintf(stderr, "Error compiling fragment shader:\n%s\n", buffer);
-	    return 1;	
-	}
-	
-	program_id = glCreateProgram();
-	
-	glAttachShader(program_id, vertex_shader_id);
-	glAttachShader(program_id, fragment_shader_id);
-
-	defer {
-	    glDetachShader(program_id, vertex_shader_id);
-	    glDetachShader(program_id, fragment_shader_id);
-	};
-	
-	glLinkProgram(program_id);
-	
-	glGetProgramiv(program_id, GL_LINK_STATUS, &compile_success);
-	if(!compile_success)
-	{
-	    int info_log_len;
-	    glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &info_log_len);
-	    char *buffer = (char*)malloc(info_log_len);
-	    glGetShaderInfoLog(program_id, info_log_len, nullptr, buffer);
-	    fprintf(stderr, "Error linking shader program:\n%s\n", buffer);
-	    return 1;	
-	}
+	return 1;
     }
 
     // Setup rendering data

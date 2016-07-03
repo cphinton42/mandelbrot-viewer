@@ -28,6 +28,8 @@ static glm::vec3 mouse_pos = {0,0,1};
 static float window_width, window_height;
 static bool window_changed = false;
 
+static bool do_draw = true;
+
 void error_callback(int err, const char *desc)
 {
     fprintf(stderr, "GLFW error %i: %s\n", err, desc);
@@ -37,6 +39,7 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
     aspect_ratio = (float)width / (float)height;
     glViewport(0, 0, width, height);
+    do_draw = true;
 }
 
 void window_size_callback(GLFWwindow *window, int width, int height)
@@ -75,6 +78,7 @@ void cursor_pos_callback(GLFWwindow *window, double xpos, double ypos)
 void scroll_callback(GLFWwindow *window, double x_scroll, double y_scroll)
 {
     scale -= 0.1*scale*y_scroll;
+    do_draw = true;
 }
 
 int main()
@@ -221,38 +225,44 @@ int main()
 		glm::vec3 dp = current - prev;
 		center_x -= dp.x;
 		center_y -= dp.y;
+		do_draw = true;
 	    }
 	    prev_mouse_pos = mouse_pos;
 	    mouse_moved = false;
 	}
 
-	float half_h = 2*scale;
-	float half_w = aspect_ratio * half_h;
-	view_matrix[0][0] = half_w;
-	view_matrix[2][0] = center_x;
-	view_matrix[1][1] = half_h;
-	view_matrix[2][1] = center_y;
+	if(do_draw)
+	{
+	    do_draw = false;
+	    
+	    float half_h = 2*scale;
+	    float half_w = aspect_ratio * half_h;
+	    view_matrix[0][0] = half_w;
+	    view_matrix[2][0] = center_x;
+	    view_matrix[1][1] = half_h;
+	    view_matrix[2][1] = center_y;
 
 	
-	glClear(GL_COLOR_BUFFER_BIT);
+	    glClear(GL_COLOR_BUFFER_BIT);
 
-	glUseProgram(program_id);
+	    glUseProgram(program_id);
 
-	glUniformMatrix3fv(matrix_id, 1, GL_FALSE, glm::value_ptr(view_matrix));
+	    glUniformMatrix3fv(matrix_id, 1, GL_FALSE, glm::value_ptr(view_matrix));
 	
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	    glEnableVertexAttribArray(0);
+	    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+	    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-	glDrawArrays(GL_TRIANGLES, 0, 12*3);
+	    glDrawArrays(GL_TRIANGLES, 0, 12*3);
 
-	glDisableVertexAttribArray(0);
+	    glDisableVertexAttribArray(0);
 	
-	glfwSwapBuffers(window);
-
+	    glfwSwapBuffers(window);
+	}
+	
 	auto end = std::chrono::high_resolution_clock::now();
 	auto duration = end-start;
-	auto wait_time = std::chrono::milliseconds(33) - duration;
+	auto wait_time = std::chrono::milliseconds(16) - duration;
 	if(wait_time >= std::chrono::seconds(0))
 	{
 	    std::this_thread::sleep_for(wait_time);

@@ -155,7 +155,7 @@ int main()
     // Compile shaders
     //
     GLuint program_id;
-    if(!load_shader_program("shaders/simple.vert", "shaders/simple.frag", &program_id))
+    if(!load_shader_program("gpu_programs/simple.vert", "gpu_programs/simple.frag", &program_id))
     {
 	return 1;
     }
